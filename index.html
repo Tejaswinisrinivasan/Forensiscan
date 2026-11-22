@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ForensiScan | Image Tampering Analysis (Prototype v1)</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="cyber-theme">
+  <!-- Top Forensic Navigation Bar -->
+  <header class="top-nav">
+    <div class="nav-container">
+      <div class="brand">
+        <div class="brand-radar">
+          <div class="radar-sweep"></div>
+          <span class="radar-dot"></span>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">FORENSI<span class="highlight">SCAN</span></span>
+          <span class="brand-badge">PROTOTYPE v1.0</span>
+        </div>
+      </div>
+      
+      <div class="nav-meta">
+        <div class="system-status" id="systemStatus">
+          <span class="status-indicator live"></span>
+          <span class="status-text">ENGINE: <strong class="glow-text">ELA LIVE</strong></span>
+        </div>
+        <div class="model-status">
+          <span class="status-indicator training"></span>
+          <span class="status-text">CNN: <strong class="amber-text">IN TRAINING</strong></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <!-- Hero Header -->
+    <section class="hero-section">
+      <div class="hero-badge">DIGITAL MEDIA FORENSICS • ERROR LEVEL ANALYSIS</div>
+      <h1 class="hero-title">Image Tampering & Splicing Detection</h1>
+      <p class="hero-subtitle">
+        Inspect compression inconsistencies in digital images using Error Level Analysis (ELA), 
+        thermal colormap projection, and localized anomaly heuristics.
+      </p>
+    </section>
+
+    <!-- Upload & Quick Demo Section -->
+    <section class="upload-section" id="uploadSection">
+      <div class="card upload-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="card-num">01</span>
+            <h3>Select or Drop Image for Forensic Inspection</h3>
+          </div>
+          <span class="format-tag">JPEG / PNG • Max 10 MB</span>
+        </div>
+
+        <!-- Drag & Drop Zone -->
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,image/jpeg,image/png" hidden>
+          <div class="drop-zone-content">
+            <div class="drop-icon-wrapper">
+              <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <h4>Drag & drop JPEG or PNG image here</h4>
+            <p>or <button type="button" class="btn-browse" id="btnBrowse">browse from device</button></p>
+            <span class="file-note">Only static images accepted • Strictly no video/GIF</span>
+          </div>
+
+          <!-- Selected File Preview in Drop Zone -->
+          <div class="preview-stage" id="previewStage" style="display: none;">
+            <div class="preview-thumbnail-wrap">
+              <img id="imagePreview" alt="Image preview">
+            </div>
+            <div class="preview-details">
+              <div class="preview-filename" id="previewFilename">image.jpg</div>
+              <div class="preview-meta" id="previewMeta">0 KB • 0 x 0 px</div>
+              <div class="preview-actions">
+                <button type="button" class="btn-primary" id="btnAnalyze">
+                  <span class="btn-icon">⚡</span> Run Forensic ELA
+                </button>
+                <button type="button" class="btn-secondary" id="btnReset">Remove</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick 1-Click Demo Samples for Evaluators -->
+        <div class="sample-picker">
+          <span class="sample-label">⚡ Quick Hackathon Demo Samples:</span>
+          <div class="sample-buttons">
+            <button type="button" class="btn-sample sample-tampered" data-sample="tampered.jpg">
+              <span class="dot red"></span> Spliced / Tampered JPEG
+            </button>
+            <button type="button" class="btn-sample sample-authentic" data-sample="authentic.jpg">
+              <span class="dot green"></span> Authentic Control JPEG
+            </button>
+            <button type="button" class="btn-sample" data-sample="sample_lossless.png">
+              <span class="dot blue"></span> Lossless PNG
+            </button>
+            <button type="button" class="btn-sample" data-sample="sample_lowres.jpg">
+              <span class="dot yellow"></span> Low-Res (200x140)
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scanning / Loading State -->
+    <section class="loading-section" id="loadingSection" style="display: none;">
+      <div class="card loading-card">
+        <div class="scanner-hud">
+          <div class="scanner-grid">
+            <div class="scanner-sweep-line"></div>
+          </div>
+        </div>
+        <div class="loading-info">
+          <h3 class="loading-title">Processing Forensic Error Level Analysis...</h3>
+          <div class="loading-steps">
+            <div class="loading-step active" id="lStep1">▶ Re-saving JPEG at Q=90 baseline</div>
+            <div class="loading-step" id="lStep2">▶ Calculating per-pixel absolute difference & auto-scaling</div>
+            <div class="loading-step" id="lStep3">▶ Generating smoothed INFERNO colormap & clustering ROIs</div>
+            <div class="loading-step" id="lStep4">▶ Computing rule-based ELA heuristic suspicion score</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Banner -->
+    <div class="error-banner" id="errorBanner" style="display: none;">
+      <div class="error-content">
+        <span class="error-icon">🛑</span>
+        <div class="error-message" id="errorMessage">Error text</div>
+      </div>
+      <button type="button" class="btn-close-error" id="btnCloseError">&times;</button>
+    </div>
+
+    <!-- Diagnostic Warnings Box -->
+    <div class="warnings-box" id="warningsBox" style="display: none;">
+      <div class="warning-title">
+        <span>⚠️</span> System Diagnostic Warnings
+      </div>
+      <ul class="warning-list" id="warningList"></ul>
+    </div>
+
+    <!-- Analysis Results Section -->
+    <section class="results-section" id="resultsSection" style="display: none;">
+      <!-- Verdict & Score Gauge Bar -->
+      <div class="card verdict-card">
+        <div class="verdict-grid">
+          <!-- Score Gauge (0 to 1) -->
+          <div class="gauge-column">
+            <div class="gauge-container">
+              <svg class="gauge-svg" viewBox="0 0 160 160">
+                <circle class="gauge-bg" cx="80" cy="80" r="64" />
+                <circle class="gauge-fill" id="gaugeCircle" cx="80" cy="80" r="64" />
+              </svg>
+              <div class="gauge-inner">
+                <span class="gauge-score" id="gaugeScoreText">0.00</span>
+                <span class="gauge-scale">OUT OF 1.00</span>
+              </div>
+            </div>
+            <div class="gauge-caption">
+              <strong>ELA Heuristic Score</strong>
+              <small>Rule-Based Statistical Metric (Non-ML)</small>
+            </div>
+          </div>
+
+          <!-- Suspicion Label & Quick Assessment -->
+          <div class="verdict-summary">
+            <div class="verdict-pill-wrap">
+              <span class="verdict-pill" id="suspicionLabel">Evaluating...</span>
+              <span class="time-badge" id="timeBadge">
+                <span class="bolt">⚡</span> <span id="timeMs">0</span> ms
+                <span class="target-chip" id="targetChip">&lt; 2 s Target Met ✓</span>
+              </span>
+            </div>
+            <h2 class="verdict-heading" id="verdictHeading">Suspicion Assessment</h2>
+            <p class="verdict-desc" id="verdictDesc">
+              The ELA algorithm measures differences in compression degradation across the image.
+            </p>
+
+            <div class="metadata-chips">
+              <div class="meta-chip">
+                <span class="chip-label">File:</span>
+                <span class="chip-val" id="metaFilename">-</span>
+              </div>
+              <div class="meta-chip">
+                <span class="chip-label">Format:</span>
+                <span class="chip-val" id="metaFormat">-</span>
+              </div>
+              <div class="meta-chip">
+                <span class="chip-label">Resolution:</span>
+                <span class="chip-val" id="metaRes">-</span>
+              </div>
+              <div class="meta-chip">
+                <span class="chip-label">Amplification:</span>
+                <span class="chip-val" id="metaScale">-</span>
+              </div>
+              <div class="meta-chip">
+                <span class="chip-label">Suspicious ROIs:</span>
+                <span class="chip-val" id="metaRois">-</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions: Print/Download Report -->
+          <div class="verdict-actions">
+            <button type="button" class="btn-action btn-print" id="btnPrintReport">
+              <span class="action-icon">🖨️</span> Download Report (PDF)
+            </button>
+            <button type="button" class="btn-action btn-new" id="btnNewScan">
+              <span class="action-icon">🔄</span> Scan Another Image
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4-Way Forensic View & Comparison Slider -->
+      <div class="card visualizer-card">
+        <div class="card-header visualizer-header">
+          <div class="card-title">
+            <span class="card-num">02</span>
+            <h3>4-Way Multi-Spectral Forensic Visualizer</h3>
+          </div>
+          <!-- View Modes: Single Tab View vs 4-Way Grid -->
+          <div class="view-toggles">
+            <button type="button" class="view-btn active" data-view="grid" id="btnGridView">
+              <span class="toggle-icon">⊞</span> 4-Way Grid
+            </button>
+            <button type="button" class="view-btn" data-view="slider" id="btnSliderView">
+              <span class="toggle-icon">◧</span> Comparison Slider
+            </button>
+          </div>
+        </div>
+
+        <!-- 4-Way Grid View -->
+        <div class="quad-grid" id="quadGrid">
+          <!-- Panel 1: Original Image -->
+          <div class="quad-panel">
+            <div class="panel-header">
+              <span class="panel-title">1. Original Image</span>
+              <span class="panel-badge">RAW INPUT</span>
+            </div>
+            <div class="image-box">
+              <img id="imgOriginal" src="" alt="Original Image">
+            </div>
+            <div class="panel-footer">Unmodified source image submitted for verification</div>
+          </div>
+
+          <!-- Panel 2: ELA Map -->
+          <div class="quad-panel">
+            <div class="panel-header">
+              <span class="panel-title">2. ELA Map (Amplified)</span>
+              <span class="panel-badge cyan">Q=90 RESIDUAL</span>
+            </div>
+            <div class="image-box">
+              <img id="imgEla" src="" alt="ELA Map">
+            </div>
+            <div class="panel-footer">
+              Absolute difference auto-scaled by <strong id="footerElaScale">1.0x</strong>
+            </div>
+          </div>
+
+          <!-- Panel 3: Heatmap Overlay -->
+          <div class="quad-panel">
+            <div class="panel-header">
+              <span class="panel-title">3. Heatmap Overlay</span>
+              <span class="panel-badge orange">INFERNO COLORMAP</span>
+            </div>
+            <div class="image-box">
+              <img id="imgHeatmap" src="" alt="Heatmap Overlay">
+            </div>
+            <div class="panel-footer">Smoothed ELA intensity alpha-blended over original (52%)</div>
+          </div>
+
+          <!-- Panel 4: Highlighted Regions -->
+          <div class="quad-panel">
+            <div class="panel-header">
+              <span class="panel-title">4. Highlighted Regions</span>
+              <span class="panel-badge red">DETECTED ROIs</span>
+            </div>
+            <div class="image-box">
+              <img id="imgBoxes" src="" alt="Highlighted Regions">
+            </div>
+            <div class="panel-footer">
+              <span id="footerBoxesCount">0</span> suspicious anomaly cluster(s) bounded
+            </div>
+          </div>
+        </div>
+
+        <!-- Before / After Interactive Comparison Slider View -->
+        <div class="slider-container" id="sliderContainer" style="display: none;">
+          <div class="slider-selector-bar">
+            <span>Compare Original Against:</span>
+            <button type="button" class="slider-choice-btn active" data-target="heatmap">Heatmap Overlay</button>
+            <button type="button" class="slider-choice-btn" data-target="ela">Amplified ELA</button>
+            <button type="button" class="slider-choice-btn" data-target="boxes">Highlighted ROIs</button>
+          </div>
+
+          <div class="split-slider-wrapper" id="splitSliderWrapper">
+            <!-- Background Image (Overlay) -->
+            <img class="slider-img slider-bg" id="sliderBgImg" src="" alt="Comparison Target">
+            <!-- Foreground Image (Original) wrapped in clip container -->
+            <div class="slider-fg-wrap" id="sliderFgWrap">
+              <img class="slider-img slider-fg" id="sliderFgImg" src="" alt="Original Image">
+              <span class="slider-label label-left">ORIGINAL</span>
+            </div>
+            <span class="slider-label label-right" id="sliderRightLabel">HEATMAP OVERLAY</span>
+            <!-- Draggable divider bar -->
+            <div class="slider-divider" id="sliderDivider">
+              <div class="divider-handle">
+                <span>◀ ▶</span>
+              </div>
+            </div>
+          </div>
+          <p class="slider-hint">Drag handle left/right to wipe between Original and Forensic Overlay</p>
+        </div>
+      </div>
+
+      <!-- Statistical Metrics Breakdown & ROI Table -->
+      <div class="stats-row">
+        <!-- Heuristic Metrics Breakdown Card -->
+        <div class="card stats-card">
+          <div class="card-header">
+            <h4>Heuristic Statistics Breakdown</h4>
+            <span class="sub-badge">RULE ENGINE</span>
+          </div>
+          <div class="stats-table">
+            <div class="stat-item">
+              <span class="stat-name">Mean Error Intensity:</span>
+              <span class="stat-val" id="statMean">-</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-name">Peak Pixel Delta (Max):</span>
+              <span class="stat-val" id="statMax">-</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-name">High-Discrepancy Pixels:</span>
+              <span class="stat-val" id="statHighRatio">-</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-name">Spatial Concentration Ratio:</span>
+              <span class="stat-val" id="statConcentration">-</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-name">Peak-to-Mean Ratio:</span>
+              <span class="stat-val" id="statPeakMean">-</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-name">Standard Deviation (&sigma;):</span>
+              <span class="stat-val" id="statStd">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detected Suspicious Anomaly Clusters (ROIs) -->
+        <div class="card rois-card">
+          <div class="card-header">
+            <h4>Detected Anomaly Regions (ROIs)</h4>
+            <span class="sub-badge" id="roiBadgeCount">0 BOUNDED</span>
+          </div>
+          <div class="rois-content">
+            <div class="roi-list" id="roiList">
+              <p class="no-rois">No significant high-contrast anomaly clusters detected.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Printable Forensic Dossier Footer with Team Details -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <strong>FORENSISCAN</strong> — Media Authenticity &amp; Integrity Analysis
+      </div>
+      <div class="footer-team">
+        <span class="team-label">Forensic Engineering Team:</span>
+        <span class="team-names">Digital Forensics &amp; Image Integrity Lab • Hackathon Prototype v1.0</span>
+      </div>
+      <p class="footer-disclaimer">
+        Permanent Note: ELA is an investigative clue, not conclusive proof of digital tampering.
+        Rule-based heuristic prototype for hackathon demonstration.
+      </p>
+      <div class="footer-copy">
+        Built with Flask, Pillow, OpenCV &amp; NumPy • Zero external cloud dependencies
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/main.js"></script>
+</body>
+</html>
